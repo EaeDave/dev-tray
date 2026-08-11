@@ -106,12 +106,17 @@ the live count, and Quickshell owns the popover.
 ```bash
 npm install
 npm run install:linux
-qs -c dev-tray
+qs -c dev-tray -d
 ```
+
+The installer requires `~/.local/bin` on `PATH` and uses
+`${XDG_CONFIG_HOME:-$HOME/.config}/quickshell` for the named Quickshell config. Keep the same
+`PATH` and `XDG_CONFIG_HOME` in your graphical session so Waybar and Quickshell can find the CLI
+and config.
 
 Add the module from `apps/linux/waybar-module.jsonc` to your Waybar config and append
 `apps/linux/waybar-style.css` to its stylesheet. To start the popover with Hyprland, add
-`exec-once = qs -c dev-tray` to your user autostart config.
+`exec-once = qs -c dev-tray -d` to your user autostart config.
 
 Run `npm run scan:linux` to inspect the same JSON payload without the UI. The preview requires
 Linux with `ss`, Node.js 22+, Git (optional), Waybar, and Quickshell 0.3+.

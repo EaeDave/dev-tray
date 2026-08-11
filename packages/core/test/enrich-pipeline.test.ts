@@ -68,11 +68,13 @@ describe('enrich pipeline', () => {
 
   it('extracts absolute POSIX command-line paths', () => {
     expect(extractPaths(
-      'node /home/dev/app/server.js --config=/home/dev/app/config.js "/home/dev/my app/server.js"',
+      'node /home/dev/app/server.js --config=/home/dev/app/config.js "/home/dev/my app/server.js" --config="/home/dev/my app/config.js" /home/dev/a=b/server.js',
     )).toEqual([
       '/home/dev/app/server.js',
       '/home/dev/app/config.js',
       '/home/dev/my app/server.js',
+      '/home/dev/my app/config.js',
+      '/home/dev/a=b/server.js',
     ]);
   });
 });

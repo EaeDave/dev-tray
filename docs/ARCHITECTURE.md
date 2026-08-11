@@ -67,7 +67,7 @@ so installed desktop apps don't clutter the list.
 
 ## Source layout
 
-```
+```text
 apps/desktop/           Electron tray app and Windows composition
 apps/linux/             Linux CLI, Waybar module, and Quickshell popover
 packages/core/          cross-platform schemas, enrichment, sessions, and probes

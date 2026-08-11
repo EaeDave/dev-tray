@@ -13,7 +13,8 @@
     "test": "vitest run && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@dev-tray/core": "*"
+    "@dev-tray/core": "*",
+    "effect": "^3.16.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",

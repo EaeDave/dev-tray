@@ -1,9 +1,11 @@
-import { execFile } from 'node:child_process';
-import { scanEntries, killEntry } from './linux-scanner.js';
+import { spawn } from 'node:child_process';
+import { killEntries, scanEntries } from './linux-scanner.js';
 
 process.stdout.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code !== 'EPIPE') throw error;
 });
+
+const [command = 'scan', ...arguments_] = process.argv.slice(2);
 
 function parsePort(value: string | undefined): number {
   const port = Number(value);
@@ -17,9 +19,32 @@ function parsePid(value: string | undefined): number {
   return pid;
 }
 
-async function main(): Promise<void> {
-  const [command = 'scan', argument] = process.argv.slice(2);
+function escapePango(value: unknown): string {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
 
+function openUrl(url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('xdg-open', [url], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.once('error', reject);
+    child.once('exit', (exitCode, signal) => {
+      if (exitCode === 0) resolve();
+      else reject(new Error(
+        signal
+          ? `xdg-open was terminated by ${signal}`
+          : `xdg-open exited with code ${String(exitCode)}`,
+      ));
+    });
+  });
+}
+
+async function main(): Promise<void> {
   if (command === 'scan') {
     console.log(JSON.stringify({ entries: await scanEntries(), error: null }));
     return;
@@ -28,8 +53,12 @@ async function main(): Promise<void> {
   if (command === 'waybar') {
     const entries = await scanEntries();
     const tooltip = entries.length
-      ? entries.map((entry) => `${entry.projectName} · :${entry.port}${entry.framework ? ` · ${entry.framework}` : ''}`).join('\n')
-      : 'No dev servers';
+      ? entries.map((entry) => {
+        const projectName = escapePango(entry.projectName);
+        const framework = entry.framework ? ` · ${escapePango(entry.framework)}` : '';
+        return `${projectName} · :${entry.port}${framework}`;
+      }).join('\n')
+      : 'No active dev servers';
     console.log(JSON.stringify({
       text: `󰖟 ${entries.length}`,
       tooltip,
@@ -39,26 +68,30 @@ async function main(): Promise<void> {
   }
 
   if (command === 'kill') {
-    await killEntry(parsePid(argument));
+    if (arguments_.length === 0) throw new Error('At least one PID is required');
+    await killEntries(arguments_.map(parsePid));
     return;
   }
 
   if (command === 'open') {
-    const port = parsePort(argument);
+    const port = parsePort(arguments_[0]);
     const entry = (await scanEntries()).find((candidate) => candidate.port === port);
     if (!entry) throw new Error(`Port ${port} is not a listed dev server`);
-    const child = execFile('xdg-open', [entry.openUrl ?? `http://localhost:${port}`], () => {});
-    child.unref();
+    await openUrl(entry.openUrl ?? `http://localhost:${port}`);
     return;
   }
 
-  throw new Error('Usage: dev-tray-linux [scan|waybar|kill <pid>|open <port>]');
+  throw new Error('Usage: dev-tray-linux [scan|waybar|kill <pid...>|open <port>]');
 }
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  if (process.argv[2] === 'scan') console.log(JSON.stringify({ entries: [], error: message }));
-  else if (process.argv[2] === 'waybar') console.log(JSON.stringify({ text: '󰖟 !', tooltip: message, class: 'error' }));
+  if (command === 'scan') console.log(JSON.stringify({ entries: [], error: message }));
+  else if (command === 'waybar') console.log(JSON.stringify({
+    text: '󰖟 !',
+    tooltip: escapePango(message),
+    class: 'error',
+  }));
   else console.error(`dev-tray-linux: ${message}`);
   process.exitCode = 1;
 });

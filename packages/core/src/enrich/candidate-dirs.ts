@@ -21,21 +21,52 @@ export function dirOf(
   }
 }
 
+function commandTokens(command: string): string[] {
+  const tokens: string[] = [];
+  let token = '';
+  let quote = '';
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index]!;
+    if (quote) {
+      if (character === quote) quote = '';
+      else if (character === '\\' && command[index + 1] === quote) {
+        token += quote;
+        index += 1;
+      } else token += character;
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (/\s/.test(character)) {
+      if (token) tokens.push(token);
+      token = '';
+    } else {
+      token += character;
+    }
+  }
+
+  if (token) tokens.push(token);
+  return tokens;
+}
+
+function isAbsolutePath(value: string): boolean {
+  return /^[A-Za-z]:[\\/]/.test(value) || value.startsWith('/');
+}
+
 export function extractPaths(cmd: string | undefined | null): string[] {
   if (!cmd || typeof cmd !== 'string') return [];
 
   const out: string[] = [];
-  const tokens = cmd.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
-  for (const raw of tokens) {
+  for (const raw of commandTokens(cmd)) {
     let token = raw;
-    if ((token.startsWith('"') && token.endsWith('"'))
-      || (token.startsWith("'") && token.endsWith("'"))) {
-      token = token.slice(1, -1);
+    if (!isAbsolutePath(token)) {
+      const equals = token.indexOf('=');
+      const key = equals >= 0 ? token.slice(0, equals) : '';
+      if (equals >= 0 && (/^--?[\w.-]+$/.test(key) || /^[A-Za-z_]\w*$/.test(key))) {
+        token = token.slice(equals + 1);
+      }
     }
-    const equals = token.indexOf('=');
-    if (equals >= 0) token = token.slice(equals + 1);
     token = token.replace(/[",;]+$/, '');
-    if (/^[A-Za-z]:[\\/]/.test(token) || token.startsWith('/')) out.push(token);
+    if (isAbsolutePath(token)) out.push(token);
   }
   return out;
 }
