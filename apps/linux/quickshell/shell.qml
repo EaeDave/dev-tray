@@ -602,12 +602,28 @@ Scope {
                                                     Layout.fillWidth: true
                                                     spacing: 0
 
-                                                    Label {
-                                                        text: ":" + String(serverRow.entry.port)
-                                                        color: root.colorText
-                                                        font.family: "monospace"
-                                                        font.pixelSize: 15
-                                                        font.weight: Font.DemiBold
+                                                    RowLayout {
+                                                        Layout.fillWidth: true
+                                                        spacing: root.spaceXs
+
+                                                        Label {
+                                                            visible: !groupBlock.grouped
+                                                            Layout.fillWidth: visible
+                                                            text: groupBlock.group.name + " ·"
+                                                            color: root.colorText
+                                                            font.family: "sans-serif"
+                                                            font.pixelSize: 13
+                                                            font.weight: Font.DemiBold
+                                                            elide: Text.ElideRight
+                                                        }
+
+                                                        Label {
+                                                            text: ":" + String(serverRow.entry.port)
+                                                            color: root.colorText
+                                                            font.family: "monospace"
+                                                            font.pixelSize: 15
+                                                            font.weight: Font.DemiBold
+                                                        }
                                                     }
 
                                                     Label {
