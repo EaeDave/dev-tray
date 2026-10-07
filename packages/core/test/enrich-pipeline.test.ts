@@ -77,4 +77,13 @@ describe('enrich pipeline', () => {
       '/home/dev/a=b/server.js',
     ]);
   });
+
+  it('ignores Windows switches that look like POSIX paths', () => {
+    expect(extractPaths('cmd.exe /d /s /c "npm run dev"')).toEqual([]);
+    expect(extractPaths('start /MIN node server.js')).toEqual([]);
+    expect(extractPaths('npm --prefix=/c run dev')).toEqual([]);
+    expect(extractPaths(String.raw`cmd /c C:\Users\dev\app\run.cmd`)).toEqual([
+      String.raw`C:\Users\dev\app\run.cmd`,
+    ]);
+  });
 });

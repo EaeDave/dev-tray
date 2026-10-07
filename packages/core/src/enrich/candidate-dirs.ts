@@ -48,8 +48,9 @@ function commandTokens(command: string): string[] {
   return tokens;
 }
 
+// POSIX paths need two segments so Windows switches such as `/c` or `/MIN` are not read as paths.
 function isAbsolutePath(value: string): boolean {
-  return /^[A-Za-z]:[\\/]/.test(value) || value.startsWith('/');
+  return /^[A-Za-z]:[\\/]/.test(value) || /^\/[^/\s]+\//.test(value);
 }
 
 export function extractPaths(cmd: string | undefined | null): string[] {
